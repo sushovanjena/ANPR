@@ -1,0 +1,11 @@
+__pycache__/
+*.egg-info/
+.ipynb_checkpoints/
+data/
+runs/
+exports/
+*.pt
+*.onnx
+*.engine
+.ruff_cache/
+.pytest_cache/
