@@ -9,7 +9,7 @@ description = "ANPR for Indian traffic scenes, targeting NVIDIA Jetson Orin"
 requires-python = ">=3.10"
 dependencies = [
   "ultralytics", "opencv-python-headless", "albumentations",
-  "numpy", "pandas", "pyyaml", "matplotlib", "seaborn",
+  "numpy", "scipy", "pandas", "pyyaml", "matplotlib", "seaborn",
   "onnx", "onnxruntime-gpu", "imagehash", "tqdm",
 ]
 
@@ -25,7 +25,7 @@ src = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "D", "I"]
-ignore = ["D203", "D213"]
+ignore = ["D203", "D213", "D105", "D107"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -35,3 +35,4 @@ convention = "google"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]
