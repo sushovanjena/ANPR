@@ -6,6 +6,8 @@ import logging
 import time
 from collections.abc import Callable
 
+import numpy as np
+
 from anpr.pipeline.cascade import Cascade
 from anpr.stream.events import to_event
 from anpr.stream.metrics import Metrics
@@ -74,6 +76,25 @@ class StreamRunner:
             self.sink.emit(to_event(s, self.camera_id))
             self.events += 1
 
+    def warmup(self) -> None:
+        """Load and warm every model on dummy input before the stream opens.
+
+        The first call of a model pays weight loading and CUDA initialisation
+        (about 16 s for the vehicle detector on a Colab T4), during which a
+        live source would fill and drop its queue. Failures are logged, not
+        raised, because a missing optional model should not stop the stream.
+        """
+        steps = (
+            ("vehicle", self.cascade.vehicle_fn, np.zeros((720, 1280, 3), np.uint8)),
+            ("plate", self.cascade.plate_fn, np.zeros((240, 320, 3), np.uint8)),
+            ("ocr", self.cascade.ocr_fn, np.zeros((48, 160, 3), np.uint8)),
+        )
+        for name, fn, dummy in steps:
+            try:
+                fn(dummy)
+            except Exception:  # noqa: BLE001
+                log.warning("warm-up of %s stage failed", name, exc_info=True)
+
     def run(self, max_frames: int | None = None) -> dict:
         """Process frames until the source ends, ``stop()`` or ``max_frames``.
 
@@ -81,6 +102,7 @@ class StreamRunner:
             Final metrics snapshot.
         """
         q: LatestQueue = self.source.queue
+        self.warmup()
         self.source.start()
         last_report = time.perf_counter()
         last_idx = 0

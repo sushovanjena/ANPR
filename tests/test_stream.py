@@ -213,3 +213,24 @@ def test_real_video_file_through_opencv(tmp_path):
     while q.get(0.05) is not None:
         n += 1
     assert n == 12
+
+
+def test_runner_warms_up_models_before_stream_opens():
+    from anpr.stream.runner import StreamRunner
+
+    calls = []
+
+    class Cas:
+        def vehicle_fn(self, f):
+            calls.append("vehicle")
+
+        def plate_fn(self, f):
+            calls.append("plate")
+
+        def ocr_fn(self, f):
+            raise RuntimeError("missing weights")
+
+    runner = StreamRunner.__new__(StreamRunner)
+    runner.cascade = Cas()
+    runner.warmup()  # a failing stage must be logged, not raised
+    assert calls == ["vehicle", "plate"]
