@@ -1,5 +1,7 @@
 # Indian ANPR cascade
 
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sushovanjena/ANPR/blob/main/notebooks/colab_gpu_test.ipynb) **Try it:** open the notebook, pick a T4 GPU, Runtime > Run all. No account, token or Drive needed.
+
 Open-source automatic number plate recognition for Indian multi-lane traffic. It
 reads plates per vehicle, not per frame: vehicles are detected and tracked first,
 each plate is tied to its vehicle, and the final plate is a vote across the
@@ -15,7 +17,7 @@ Design, references and limitations: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 Weights and how to publish them: [docs/WEIGHTS.md](docs/WEIGHTS.md). Training
 pipeline and what is still only in the notebook: [docs/TRAINING.md](docs/TRAINING.md).
 Datasets and how to download them: [docs/DATA.md](docs/DATA.md).
-GPU test on Colab: [notebooks/colab_gpu_test.ipynb](notebooks/colab_gpu_test.ipynb), including a live stream view (annotated frames and plate text updating as the clip plays like a camera, then a replay).
+GPU test on Colab: [notebooks/colab_gpu_test.ipynb](notebooks/colab_gpu_test.ipynb): three traffic clips (Hyderabad, a highway, Bangalore) played live like cameras with annotated frames and plate text, and a six-camera one-GPU deployment test.
 
 ## Status
 
