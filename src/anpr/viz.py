@@ -8,6 +8,7 @@ annotated video that a notebook can play inline.
 from __future__ import annotations
 
 import subprocess
+import time
 from pathlib import Path
 
 import cv2
@@ -161,3 +162,74 @@ def render_video(
         "tracks": len(seen),
         "plates_read": len(running_consensus(cascade)),
     }
+
+
+class LiveViewer:
+    """Per-frame callback for ``StreamRunner``: show frames live and record them.
+
+    The recording is kept at the source's real time: frames the stream dropped
+    are filled by repeating the last drawn frame, so the video lasts as long as
+    the stream did.
+
+    Args:
+        show: Called with ``(jpeg_bytes, status_text)`` at most every
+            ``min_interval`` seconds, for example to update a notebook output.
+        out_path: Optional output video (OpenCV ``mp4v``; see ``to_h264``).
+        fps: Source frame rate, used for the recording.
+        out_width: Width of the shown and recorded frames.
+        min_interval: Minimum seconds between ``show`` calls.
+    """
+
+    def __init__(
+        self,
+        show,
+        out_path: str | Path | None = None,
+        fps: float = 30.0,
+        out_width: int = 960,
+        min_interval: float = 0.1,
+    ) -> None:
+        self.show = show
+        self.out_path = out_path
+        self.fps = fps
+        self.out_width = out_width
+        self.min_interval = min_interval
+        self.cascade: Cascade | None = None
+        self.frames_shown = 0
+        self._writer = None
+        self._last_index = -1
+        self._last_frame: np.ndarray | None = None
+        self._last_shown = 0.0
+
+    def __call__(self, image: np.ndarray, results: list[FrameResult], index: int):
+        """Draw ``results`` on ``image``, show it and add it to the recording."""
+        text = running_consensus(self.cascade) if self.cascade else {}
+        h, w = image.shape[:2]
+        size = (self.out_width, int(round(h * self.out_width / w / 2)) * 2)
+        small = cv2.resize(draw_frame(image, results, text), size)
+        if self.out_path is not None:
+            if self._writer is None:
+                fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+                self._writer = cv2.VideoWriter(
+                    str(self.out_path), fourcc, self.fps, size
+                )
+            repeat = max(1, index - self._last_index) if self._last_index >= 0 else 1
+            if self._last_frame is not None:
+                for _ in range(repeat - 1):
+                    self._writer.write(self._last_frame)
+            self._writer.write(small)
+        self._last_index, self._last_frame = index, small
+        now = time.perf_counter()
+        if now - self._last_shown >= self.min_interval:
+            self._last_shown = now
+            ok, jpg = cv2.imencode(".jpg", small, [cv2.IMWRITE_JPEG_QUALITY, 70])
+            if ok:
+                status = f"frame {index}  |  {len(results)} vehicles  |  plates: "
+                status += ", ".join(sorted(set(text.values()))) or "none yet"
+                self.show(jpg.tobytes(), status)
+                self.frames_shown += 1
+
+    def close(self) -> None:
+        """Finish the recording."""
+        if self._writer is not None:
+            self._writer.release()
+            self._writer = None

@@ -58,8 +58,13 @@ def build_cascade(cfg: Config) -> Cascade:
     )
 
 
-def build_runner(cfg: Config) -> StreamRunner:
-    """Create a ready-to-run ``StreamRunner`` (source, cascade and sinks)."""
+def build_runner(cfg: Config, on_frame=None) -> StreamRunner:
+    """Create a ready-to-run ``StreamRunner`` (source, cascade and sinks).
+
+    Args:
+        cfg: Pipeline configuration.
+        on_frame: Optional per-frame callback for live views (see ``StreamRunner``).
+    """
     metrics = Metrics()
     queue = LatestQueue(cfg.queue_size, metrics)
     source: str | int = int(cfg.source) if cfg.source.isdigit() else cfg.source
@@ -79,4 +84,5 @@ def build_runner(cfg: Config) -> StreamRunner:
         metrics,
         cfg.max_gap,
         cfg.report_every,
+        on_frame,
     )

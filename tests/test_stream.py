@@ -247,3 +247,28 @@ def test_restart_clock_excludes_setup_time_from_fps():
     m.frames_in = 10
     time.sleep(0.1)
     assert m.snapshot()["fps_in"] > 40  # would be about 25 without the restart
+
+
+def test_runner_calls_on_frame_for_every_processed_frame_and_survives_errors():
+    m = Metrics()
+    q = LatestQueue(maxsize=100, metrics=m)
+    src = FrameGrabber("x", q, live=False, opener=lambda s: FakeCap(10), metrics=m)
+    seen = []
+
+    def on_frame(image, results, index):
+        seen.append((image.shape, len(results), index))
+        if index == 3:
+            raise RuntimeError("viewer broke")
+
+    runner = StreamRunner(
+        make_cascade(),
+        src,
+        CallbackSink(lambda e: None),
+        "camA",
+        m,
+        report_every=0,
+        on_frame=on_frame,
+    )
+    snap = runner.run()
+    assert snap["frames_processed"] == len(seen) == 10
+    assert seen[0][0] == (240, 320, 3)

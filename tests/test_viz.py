@@ -71,3 +71,26 @@ def test_render_video_missing_file_raises(tmp_path):
     except FileNotFoundError:
         return
     raise AssertionError("expected FileNotFoundError")
+
+
+def test_live_viewer_shows_frames_and_records_real_time(tmp_path):
+    import cv2
+
+    from anpr.viz import LiveViewer
+
+    shown = []
+    out = tmp_path / "live.mp4"
+    viewer = LiveViewer(
+        lambda jpg, status: shown.append((jpg[:2], status)),
+        out,
+        fps=10.0,
+        out_width=64,
+        min_interval=0.0,
+    )
+    frame = np.zeros((48, 64, 3), dtype=np.uint8)
+    viewer(frame, [], 0)
+    viewer(frame, [], 5)  # frames 1-4 were dropped; the recording keeps real time
+    viewer.close()
+    assert len(shown) == 2 and shown[0][0] == b"\xff\xd8"
+    cap = cv2.VideoCapture(str(out))
+    assert int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) == 6

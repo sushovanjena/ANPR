@@ -45,6 +45,9 @@ class StreamRunner:
         metrics: Shared metrics object. The source should use the same one.
         max_gap: Frames without a sighting before a vehicle is considered gone.
         report_every: Seconds between metric log lines (0 disables).
+        on_frame: Optional callback ``(image, results, frame_index)`` called
+            after every processed frame, for live views. Its errors are logged
+            and never stop the stream.
     """
 
     def __init__(
@@ -56,6 +59,7 @@ class StreamRunner:
         metrics: Metrics | None = None,
         max_gap: int = 45,
         report_every: float = 10.0,
+        on_frame: Callable | None = None,
     ) -> None:
         self.metrics = metrics or Metrics()
         self.cascade = instrument(cascade, self.metrics)
@@ -63,6 +67,7 @@ class StreamRunner:
         self.sink = sink
         self.camera_id = camera_id
         self.max_gap = max_gap
+        self.on_frame = on_frame
         self.report_every = report_every
         self.events = 0
         self._stopped = False
@@ -75,6 +80,14 @@ class StreamRunner:
         for s in summaries:
             self.sink.emit(to_event(s, self.camera_id))
             self.events += 1
+
+    def _notify(self, frame, results) -> None:
+        if self.on_frame is None:
+            return
+        try:
+            self.on_frame(frame.image, results, frame.index)
+        except Exception:  # noqa: BLE001 - a broken viewer must not stop the stream
+            log.warning("on_frame callback failed", exc_info=True)
 
     def warmup(self) -> None:
         """Load and warm every model on dummy input before the stream opens.
@@ -115,10 +128,11 @@ class StreamRunner:
                         break
                     continue
                 with self.metrics.timer("frame_ms"):
-                    self.cascade.process(frame.image, frame.index, frame.ts)
+                    results = self.cascade.process(frame.image, frame.index, frame.ts)
                     self._emit(self.cascade.newly_settled())
                     self._emit(self.cascade.drain(frame.index, self.max_gap))
                 self.metrics.frames_processed += 1
+                self._notify(frame, results)
                 last_idx = frame.index
                 if max_frames and self.metrics.frames_processed >= max_frames:
                     break
