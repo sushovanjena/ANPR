@@ -84,9 +84,10 @@ trained jointly with detection and needs no hand priors.
 | OCR | RepSVTR (mobile SVTRv2 family), CTC head, fine-tuned by sequence-level distillation | Du et al., *SVTR*, IJCAI 2022, arXiv:2205.00159; *SVTRv2*, ICCV 2025, arXiv:2411.15858; Graves et al., *CTC*, ICML 2006; Kim and Rush, *Sequence-Level Knowledge Distillation*, EMNLP 2016, arXiv:1606.07947 |
 | Consensus | Confidence-weighted voting across a track plus plate-grammar repair | this work |
 
-Measured so far (confidence 0.25, held-out): RF-DETR Nano AP50 0.958/0.965 on
-Saisirishan val/test against 0.906/0.904 for YOLO26-n; both weak on tiny plates in
-8MP photos (DataCluster, 52 plates). Fine-tuned OCR beat the pretrained model on
+Measured (confidence 0.25, held-out), published RF-DETR Nano weights: AP50 0.960 /
+0.958 on Saisirishan val/test and 0.967 on Kaggle test, but only 0.514 on DataCluster
+(52 plates; recall 0.15 for plates under 0.5% of the image). An earlier run gave
+YOLO26-n 0.906/0.904 on Saisirishan val/test; that model was not retrained. Fine-tuned OCR beat the pretrained model on
 Indian plates but lost accuracy on RoadText scene text (71% to about 24%).
 
 ## 4. Live-stream design
@@ -143,7 +144,8 @@ Findings:
 
 - End-to-end accuracy on video is not measured, and the full cascade is below real
   time on a T4 (section 5). Stages are unit-tested with fakes; the OCR adapter was written against
-  the OpenOCR API but has not yet been run on the real checkpoint in this repo.
+  the OpenOCR API and now runs on the real checkpoint in the full-pipeline test (section 5),
+  but its accuracy on video is unmeasured.
 - Grammar repair is a prior: a truncated read can be repaired into a wrong but valid
   string. One-digit districts are accepted only for Delhi.
 - Association priors are hand-set and untested on real overlapping two-wheelers.

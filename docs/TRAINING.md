@@ -25,17 +25,25 @@ The unit tests cover steps 1, 3 and 4 on CPU.
 Known limit: after fine-tuning the model loses accuracy on non-plate scene text
 (RoadText 71% to about 24%); a lower learning rate with replay data is untested.
 
-## Plate detector (not in the repo yet)
+## Plate detector
 
 The detector was trained with RF-DETR Nano (and YOLO26-n for comparison) on Indian
 plate datasets plus **composite images**: plates pasted onto real vehicle photos at
 realistic scale to create small-plate examples (Simple Copy-Paste, arXiv:2012.07177).
 
-The composite generator and the detector training and evaluation scripts were run as
-notebook cells and were lost when the Colab runtime was recycled, so they are **not
-in this repository**. They will be re-added with the retrained weights. Until then
-the detector results in `docs/ARCHITECTURE.md` come from earlier runs and cannot be
-reproduced from this repo.
+Recipe used for the published weights (`weights-v1`): RF-DETR Nano from the
+COCO-pretrained `rf-detr-nano.pth`, trained on 4,743 images (Kaggle train plus
+composite small-plate images), validated on 678 Saisirishan images, 20 epochs
+maximum, batch 16, EMA weights, early stopping with patience 5 (stopped at epoch 15,
+best epoch 9), a checkpoint every epoch. Held-out results are in
+[WEIGHTS.md](WEIGHTS.md); the detection metrics code is
+`src/anpr/eval/detection.py`.
+
+The composite generator and the training launch are still notebook cells, not
+standalone scripts: see Part 7 of
+[`notebooks/development_log.ipynb`](../notebooks/development_log.ipynb) (dataset
+rebuild, training, evaluation, release upload) and the earlier cells for the composite
+data. Turning them into scripts under `scripts/` is open work.
 
 ## Dataset inventory
 

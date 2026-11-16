@@ -13,7 +13,7 @@ frame -> vehicle detector -> tracker -> plate detector (per vehicle crop)
 
 Design, references and limitations: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 Weights and how to publish them: [docs/WEIGHTS.md](docs/WEIGHTS.md). Training
-pipeline and what is not in the repo yet: [docs/TRAINING.md](docs/TRAINING.md).
+pipeline and what is still only in the notebook: [docs/TRAINING.md](docs/TRAINING.md).
 Datasets and how to download them: [docs/DATA.md](docs/DATA.md).
 GPU test on Colab: [notebooks/colab_gpu_test.ipynb](notebooks/colab_gpu_test.ipynb).
 
@@ -22,9 +22,9 @@ GPU test on Colab: [notebooks/colab_gpu_test.ipynb](notebooks/colab_gpu_test.ipy
 | Part | State |
 |---|---|
 | Vehicle detection, tracking, live-stream runner, events, metrics | Working. Tested on a Colab T4 with a 1080p, 30 fps traffic clip (see below). |
-| Orchestration, grammar, consensus, association, config, weights fetching | Unit-tested (81 tests, CPU only). |
+| Orchestration, grammar, consensus, association, config, weights fetching | Unit-tested (92 tests, CPU only). |
 | OCR training pipeline (crops, teacher labels, synthetic data, fine-tuning) | In the repo (`src/anpr/ocr/`); unit-tested where it runs on CPU. |
-| Plate detector training and composite-data scripts | Detection metrics are in the repo (`src/anpr/eval/detection.py`); the training and composite-data scripts are **still only in the development notebook** (see [docs/TRAINING.md](docs/TRAINING.md)). |
+| Plate detector training and composite-data scripts | Detection metrics are in the repo (`src/anpr/eval/detection.py`); the training and composite-data code is **still only in the development notebook** (Part 7, see [docs/TRAINING.md](docs/TRAINING.md)). |
 | Plate detector and OCR weights | Published as release `weights-v1` with checksums; downloaded automatically. Detector AP50 0.96 on Saisirishan and Kaggle test, 0.51 on DataCluster (see [docs/WEIGHTS.md](docs/WEIGHTS.md)). |
 | End-to-end latency on video | Measured on a Colab T4: the full cascade reaches about 11.5 fps of a 30 fps stream, so it does **not** keep up (see below). |
 | End-to-end plate accuracy on video | **Not measured.** No ground-truth plate list for the clip, so no accuracy claim is made. |

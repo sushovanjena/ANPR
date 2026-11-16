@@ -23,5 +23,6 @@ The derived data (RoadText validation/test crops, composite small-plate images,
 final training splits) was built in the development notebook
 [`notebooks/development_log.ipynb`](../notebooks/development_log.ipynb) and in
 scripts that were kept on Google Drive only. The notebook shows how each was
-produced; the standalone scripts will be added when the detector is retrained
+produced (Part 7 rebuilds the detector datasets from the downloads); standalone
+scripts for the composite generator and detector training are not written yet
 (see `docs/TRAINING.md`).
