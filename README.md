@@ -12,7 +12,8 @@ frame -> vehicle detector -> tracker -> plate detector (per vehicle crop)
 ```
 
 Design, references and limitations: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
-Weights and how to publish them: [docs/WEIGHTS.md](docs/WEIGHTS.md).
+Weights and how to publish them: [docs/WEIGHTS.md](docs/WEIGHTS.md). Training
+pipeline and what is not in the repo yet: [docs/TRAINING.md](docs/TRAINING.md).
 GPU test on Colab: [notebooks/colab_gpu_test.ipynb](notebooks/colab_gpu_test.ipynb).
 
 ## Status
@@ -20,7 +21,9 @@ GPU test on Colab: [notebooks/colab_gpu_test.ipynb](notebooks/colab_gpu_test.ipy
 | Part | State |
 |---|---|
 | Vehicle detection, tracking, live-stream runner, events, metrics | Working. Tested on a Colab T4 with a 1080p, 30 fps traffic clip (see below). |
-| Orchestration, grammar, consensus, association, config, weights fetching | Unit-tested (65 tests, CPU only). |
+| Orchestration, grammar, consensus, association, config, weights fetching | Unit-tested (80 tests, CPU only). |
+| OCR training pipeline (crops, teacher labels, synthetic data, fine-tuning) | In the repo (`src/anpr/ocr/`); unit-tested where it runs on CPU. |
+| Plate detector training and composite-data scripts | **Not in the repo** (lost with a Colab runtime); re-added with the retrained weights. |
 | Plate detector and OCR weights | Trained earlier but **not yet in the repo**; being retrained and published after submission. The code downloads them automatically once published. |
 | End-to-end plate accuracy on video | **Not measured yet.** No claim is made. |
 
@@ -108,13 +111,14 @@ src/anpr/
   pipeline/   vehicle.py, association.py, consensus.py, cascade.py
   track/      bytetrack.py            ByteTrack-style tracker (numpy + scipy)
   models/     plate_detector.py       RF-DETR / YOLO plate detector wrapper
-  ocr/        recognizer.py, grammar.py   RepSVTR adapter, Indian plate grammar
+  ocr/        recognizer.py, grammar.py        runtime: RepSVTR adapter, plate grammar
+              crops.py, teacher.py, consensus.py, synth.py, finetune.py   training
   stream/     source.py, runner.py, sinks.py, events.py, metrics.py
   eval/       pipeline_eval.py        recall, precision, CER on plate events
   config.py, factory.py, run.py, weights.py, fetch_weights.py
 configs/      default.yaml
 weights/      manifest.json           (weight files are downloaded here, not committed)
-docs/         ARCHITECTURE.md, WEIGHTS.md
+docs/         ARCHITECTURE.md, WEIGHTS.md, TRAINING.md
 notebooks/    colab_gpu_test.ipynb
 tests/        one test module per component
 ```
