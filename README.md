@@ -28,12 +28,14 @@ GPU test on Colab: [notebooks/colab_gpu_test.ipynb](notebooks/colab_gpu_test.ipy
 | End-to-end plate accuracy on video | **Not measured yet.** No claim is made. |
 
 Measured on a Colab T4 (vehicle detector and tracker only, clip played at real
-time, single run on one clip, not a benchmark):
+time, two runs on one clip, not a benchmark; drops vary run to run):
 
 | Detector size | p50 / p95 frame time | Frames dropped | Tracks |
 |---|---|---|---|
 | 640 | 19 / 48 ms | 46 of 1172 (4%) | 28 |
 | 1280 | 23 / 63 ms | 96 of 1172 (8%) | 34 |
+| 640, second run | 16 / 37 ms | 5 of 1172 | 26 |
+| 1280, second run | 21 / 38 ms | 30 of 1172 | 34 |
 
 The tracker finds far fewer vehicles than are visible in this dense scene
 (few two-wheelers; COCO has no auto-rickshaw class), so vehicle recall is the main

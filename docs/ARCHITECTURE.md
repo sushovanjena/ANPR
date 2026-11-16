@@ -108,12 +108,14 @@ Indian plates but lost accuracy on RoadText scene text (71% to about 24%).
 
 Setup: Colab T4, vehicle detector (YOLO26-n, COCO) and tracker only, a 39 s 1080p
 30 fps clip of dense traffic near Charminar played at real time through the live
-runner. Single runs on one clip; indicative, not a benchmark.
+runner. Two runs on one clip; frame drops vary run to run, so treat the numbers as indicative, not a benchmark.
 
 | Detector size | p50 / p95 frame time | Frames dropped | Tracks |
 |---|---|---|---|
 | 640 | 19 / 48 ms | 46 of 1172 | 28 |
 | 1280 | 23 / 63 ms | 96 of 1172 | 34 (3 motorcycles) |
+| 640, second run | 16 / 37 ms | 5 of 1172 | 26 |
+| 1280, second run | 21 / 38 ms | 30 of 1172 | 34 (4 motorcycles) |
 
 Findings:
 - **Throughput holds.** The runner keeps up with a 30 fps stream at both sizes, with
