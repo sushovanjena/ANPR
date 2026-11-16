@@ -7,9 +7,12 @@ the coordinates of the crop it was given.
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 KINDS = ("yolo", "rfdetr")
 
@@ -28,6 +31,9 @@ class PlateDetector:
             detection, because a plate in a small vehicle crop is only a few
             pixels wide and the detector was trained at larger plate sizes.
         device: Torch device string or None for automatic.
+        optimize: For RF-DETR, build the compiled inference predictor (much
+            faster than the training-mode model). Falls back to the plain model
+            if compilation is not available.
     """
 
     def __init__(
@@ -39,6 +45,7 @@ class PlateDetector:
         min_crop: int = 16,
         upscale_to: int = 320,
         device: str | None = None,
+        optimize: bool = True,
     ) -> None:
         if kind not in KINDS:
             raise ValueError(f"kind must be one of {KINDS}, got {kind!r}")
@@ -54,6 +61,7 @@ class PlateDetector:
         self.min_crop = min_crop
         self.upscale_to = upscale_to
         self.device = device
+        self.optimize = optimize
         self._model = None
 
     def _load(self):
@@ -63,7 +71,13 @@ class PlateDetector:
             return YOLO(str(self.weights))
         from rfdetr import RFDETRNano
 
-        return RFDETRNano(pretrain_weights=str(self.weights))
+        model = RFDETRNano(pretrain_weights=str(self.weights))
+        if self.optimize:
+            try:
+                return model.inference(compile=True, batch_size=1)
+            except Exception as exc:  # noqa: BLE001 - any failure means "use plain"
+                logger.warning("RF-DETR inference optimisation failed (%s)", exc)
+        return model
 
     def __call__(self, crop: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Return ``(boxes, scores)`` in crop coordinates for a BGR crop."""
