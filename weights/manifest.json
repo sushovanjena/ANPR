@@ -1,0 +1,26 @@
+{
+  "repo": "sushovanjena/ANPR",
+  "release_tag": "weights-v1",
+  "files": {
+    "plate_rfdetr_nano.pth": {
+      "role": "plate detector (RF-DETR Nano)",
+      "url": null,
+      "sha256": null
+    },
+    "plate_yolo26n.pt": {
+      "role": "plate detector (YOLO26-n, alternative)",
+      "url": null,
+      "sha256": null
+    },
+    "ocr_repsvtr_v2.pt": {
+      "role": "plate OCR (RepSVTR, fine-tuned)",
+      "url": null,
+      "sha256": null
+    },
+    "plate_dict.txt": {
+      "role": "OCR character dictionary (36 characters)",
+      "url": null,
+      "sha256": null
+    }
+  }
+}

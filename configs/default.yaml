@@ -1,10 +1,11 @@
-# ANPR cascade configuration. Paths are examples for the Colab/Drive layout.
+# ANPR cascade configuration. Weight paths are relative to the repository root.
 camera_id: cam0
 source: sample.mp4          # RTSP URL, file path or webcam index
 live: false                 # true for cameras (wall-clock time, auto-reconnect)
 realtime: true              # files only: pace frames at source FPS like a live stream
 queue_size: 2               # frames buffered; oldest is dropped when full
 max_gap: 45                 # frames without a sighting before a vehicle is "gone"
+auto_fetch_weights: true    # download published weights on first use
 report_every: 10.0          # seconds between metric log lines
 
 vehicle:
@@ -15,13 +16,13 @@ vehicle:
 plate:
   enabled: true             # false = vehicles + tracking only (no plate weights yet)
   kind: rfdetr              # rfdetr | yolo
-  weights: /content/drive/MyDrive/bosch_anpr/models/det_rfdetr_nano_main/checkpoint_best_ema.pth
+  weights: weights/plate_rfdetr_nano.pth   # fetched from the release (see docs/WEIGHTS.md)
   conf: 0.3
 
 ocr:
-  openocr_dir: /content/OpenOCR
-  weights: /content/drive/MyDrive/bosch_anpr/models/ocr_repsvtr_ft_v2/best_ema.pt
-  dict_path: /content/drive/MyDrive/bosch_anpr/models/ocr_repsvtr_ft_v2/plate_dict.txt
+  openocr_dir: third_party/OpenOCR        # cloned automatically
+  weights: weights/ocr_repsvtr_v2.pt
+  dict_path: weights/plate_dict.txt
   two_line_aspect: 2.6
 
 tracker:

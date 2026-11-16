@@ -9,3 +9,8 @@ __pycache__/
 *.pt
 *.onnx
 *.engine
+*.pth
+/third_party/
+/out/
+/weights/*
+!/weights/manifest.json

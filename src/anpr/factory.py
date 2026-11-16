@@ -21,17 +21,27 @@ def _no_plates(crop: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 def build_cascade(cfg: Config) -> Cascade:
     """Create the cascade with real models according to ``cfg``.
 
-    With ``plate.enabled`` false the plate detector and OCR are not loaded, so
-    the vehicle detector and tracker can be tested before plate weights exist.
+    Weights listed in ``weights/manifest.json`` are downloaded on first use when
+    ``auto_fetch_weights`` is true. With ``plate.enabled`` false the plate
+    detector and OCR are not loaded, so the vehicle detector and tracker can be
+    tested before plate weights exist.
     """
     vehicle = VehicleDetector(cfg.vehicle.weights, cfg.vehicle.imgsz, cfg.vehicle.conf)
     if cfg.plate.enabled:
+        from anpr import weights
         from anpr.models.plate_detector import PlateDetector
         from anpr.ocr.recognizer import PlateReader, RepSvtrRecognizer
 
-        plate_fn = PlateDetector(cfg.plate.weights, cfg.plate.kind, cfg.plate.conf)
+        auto = cfg.auto_fetch_weights
+        plate_w = weights.resolve(cfg.plate.weights, auto)
+        ocr_w = weights.resolve(cfg.ocr.weights, auto)
+        dict_w = weights.resolve(cfg.ocr.dict_path, auto)
+        openocr = (
+            weights.ensure_openocr(cfg.ocr.openocr_dir) if auto else cfg.ocr.openocr_dir
+        )
+        plate_fn = PlateDetector(str(plate_w), cfg.plate.kind, cfg.plate.conf)
         ocr_fn = PlateReader(
-            RepSvtrRecognizer(cfg.ocr.openocr_dir, cfg.ocr.weights, cfg.ocr.dict_path),
+            RepSvtrRecognizer(str(openocr), str(ocr_w), str(dict_w)),
             cfg.ocr.two_line_aspect,
         )
     else:

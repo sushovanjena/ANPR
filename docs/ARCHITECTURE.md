@@ -104,10 +104,35 @@ Indian plates but lost accuracy on RoadText scene text (71% to about 24%).
 - **Replay as live.** `realtime: true` paces a recording at its source FPS, so a file
   benchmarks like a camera.
 
-## 5. Limitations (state these up front)
+## 5. Live test on Colab
+
+Setup: Colab T4, vehicle detector (YOLO26-n, COCO) and tracker only, a 39 s 1080p
+30 fps clip of dense traffic near Charminar played at real time through the live
+runner. Single runs on one clip; indicative, not a benchmark.
+
+| Detector size | p50 / p95 frame time | Frames dropped | Tracks |
+|---|---|---|---|
+| 640 | 19 / 48 ms | 46 of 1172 | 28 |
+| 1280 | 23 / 63 ms | 96 of 1172 | 34 (3 motorcycles) |
+
+Findings:
+- **Throughput holds.** The runner keeps up with a 30 fps stream at both sizes, with
+  drops from the bounded queue rather than growing lag.
+- **Cold start matters.** The first call of the detector took about 16 s (weights and
+  CUDA initialisation) and dropped about 480 frames. The runner now warms every
+  stage before the stream opens, which cut drops from 506 to 46.
+- **Vehicle recall is the weak point.** The scene shows many more vehicles than were
+  tracked, almost no two-wheelers, and COCO has no auto-rickshaw class (they appear
+  as car or truck). A detector fine-tuned for Indian vehicles is the next step.
+- **Not yet measured:** plate detection, OCR and end-to-end accuracy, because the
+  plate weights are being retrained and published after submission
+  ([WEIGHTS.md](WEIGHTS.md)).
+
+## 6. Limitations (state these up front)
 
 - Plate detector weights are not in the repo yet; end-to-end accuracy on video is not
-  measured. Stages are unit-tested with fakes; the OCR adapter needs its Colab check.
+  measured. Stages are unit-tested with fakes; the OCR adapter was written against
+  the OpenOCR API but has not yet been run on the real checkpoint in this repo.
 - Grammar repair is a prior: a truncated read can be repaired into a wrong but valid
   string. One-digit districts are accepted only for Delhi.
 - Association priors are hand-set and untested on real overlapping two-wheelers.

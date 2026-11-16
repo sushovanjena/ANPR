@@ -23,7 +23,7 @@ class PlateCfg:
 
     enabled: bool = True
     kind: str = "rfdetr"
-    weights: str = ""
+    weights: str = "weights/plate_rfdetr_nano.pth"
     conf: float = 0.3
 
 
@@ -31,9 +31,9 @@ class PlateCfg:
 class OcrCfg:
     """OCR settings."""
 
-    openocr_dir: str = ""
-    weights: str = ""
-    dict_path: str = ""
+    openocr_dir: str = "third_party/OpenOCR"
+    weights: str = "weights/ocr_repsvtr_v2.pt"
+    dict_path: str = "weights/plate_dict.txt"
     two_line_aspect: float = 2.6
 
 
@@ -84,6 +84,7 @@ class Config:
     queue_size: int = 2
     max_gap: int = 45
     report_every: float = 10.0
+    auto_fetch_weights: bool = True
     vehicle: VehicleCfg = field(default_factory=VehicleCfg)
     plate: PlateCfg = field(default_factory=PlateCfg)
     ocr: OcrCfg = field(default_factory=OcrCfg)
