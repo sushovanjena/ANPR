@@ -127,11 +127,15 @@ Findings:
   tracked, almost no two-wheelers, and COCO has no auto-rickshaw class (they appear
   as car or truck). A detector fine-tuned for Indian vehicles is the next step.
 - **Full cascade does not keep up with 30 fps on a T4.** With the published plate
-  and OCR weights, one real-time run processed 5.8 of 29.7 fps (229 of 1172 frames;
-  943 dropped). Per stage p50 / p95: vehicle 35 / 131 ms, plate detector 50 / 184 ms,
-  OCR 46 / 204 ms; whole frame 74 / 608 ms. Latency stays bounded because of the
-  drop-oldest queue. The plate detector ran without RF-DETR's inference
-  optimisation (it logs a warning), which is the first thing to try.
+  and OCR weights, one real-time run with the plain RF-DETR model processed 5.8 of
+  29.7 fps (943 of 1172 frames dropped); per stage p50 / p95: vehicle 35 / 131 ms,
+  plate detector 50 / 184 ms, OCR 46 / 204 ms, whole frame 74 / 608 ms.
+- **Compiled inference predictor helps a lot.** Using RF-DETR's `inference()`
+  predictor (now the default, with fallback) one run gave vehicle 20 / 41 ms,
+  plate detector 14 / 20 ms, OCR 27 / 118 ms, whole frame 40 / 73 ms, and 11.5 fps
+  processed (724 of 1172 dropped). Still below real time; OCR tail latency and
+  per-vehicle plate calls are the next costs. Latency stays bounded by the
+  drop-oldest queue.
 - **Not measured:** end-to-end plate accuracy. The clip has no ground-truth plate
   list; 25 events were written and their correctness is unchecked.
 
