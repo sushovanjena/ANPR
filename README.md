@@ -119,6 +119,7 @@ src/anpr/
   stream/     source.py, runner.py, sinks.py, events.py, metrics.py
   eval/       pipeline_eval.py        recall, precision, CER on plate events
   config.py, factory.py, run.py, weights.py, fetch_weights.py
+  viz.py      annotated-video renderer (boxes, track ids, plate text) for demos
 configs/      default.yaml
 weights/      manifest.json           (weight files are downloaded here, not committed)
 docs/         ARCHITECTURE.md, WEIGHTS.md, TRAINING.md, DATA.md
