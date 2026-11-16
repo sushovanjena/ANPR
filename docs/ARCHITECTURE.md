@@ -126,14 +126,19 @@ Findings:
 - **Vehicle recall is the weak point.** The scene shows many more vehicles than were
   tracked, almost no two-wheelers, and COCO has no auto-rickshaw class (they appear
   as car or truck). A detector fine-tuned for Indian vehicles is the next step.
-- **Not yet measured:** plate detection, OCR and end-to-end accuracy, because the
-  plate weights are being retrained and published after submission
-  ([WEIGHTS.md](WEIGHTS.md)).
+- **Full cascade does not keep up with 30 fps on a T4.** With the published plate
+  and OCR weights, one real-time run processed 5.8 of 29.7 fps (229 of 1172 frames;
+  943 dropped). Per stage p50 / p95: vehicle 35 / 131 ms, plate detector 50 / 184 ms,
+  OCR 46 / 204 ms; whole frame 74 / 608 ms. Latency stays bounded because of the
+  drop-oldest queue. The plate detector ran without RF-DETR's inference
+  optimisation (it logs a warning), which is the first thing to try.
+- **Not measured:** end-to-end plate accuracy. The clip has no ground-truth plate
+  list; 25 events were written and their correctness is unchecked.
 
 ## 6. Limitations (state these up front)
 
-- Plate detector weights are not in the repo yet; end-to-end accuracy on video is not
-  measured. Stages are unit-tested with fakes; the OCR adapter was written against
+- End-to-end accuracy on video is not measured, and the full cascade is below real
+  time on a T4 (section 5). Stages are unit-tested with fakes; the OCR adapter was written against
   the OpenOCR API but has not yet been run on the real checkpoint in this repo.
 - Grammar repair is a prior: a truncated read can be repaired into a wrong but valid
   string. One-digit districts are accepted only for Delhi.

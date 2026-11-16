@@ -24,9 +24,10 @@ GPU test on Colab: [notebooks/colab_gpu_test.ipynb](notebooks/colab_gpu_test.ipy
 | Vehicle detection, tracking, live-stream runner, events, metrics | Working. Tested on a Colab T4 with a 1080p, 30 fps traffic clip (see below). |
 | Orchestration, grammar, consensus, association, config, weights fetching | Unit-tested (81 tests, CPU only). |
 | OCR training pipeline (crops, teacher labels, synthetic data, fine-tuning) | In the repo (`src/anpr/ocr/`); unit-tested where it runs on CPU. |
-| Plate detector training and composite-data scripts | **Not in the repo** (lost with a Colab runtime); re-added with the retrained weights. |
-| Plate detector and OCR weights | Trained earlier but **not yet in the repo**; being retrained and published after submission. The code downloads them automatically once published. |
-| End-to-end plate accuracy on video | **Not measured yet.** No claim is made. |
+| Plate detector training and composite-data scripts | Detection metrics are in the repo (`src/anpr/eval/detection.py`); the training and composite-data scripts are **still only in the development notebook** (see [docs/TRAINING.md](docs/TRAINING.md)). |
+| Plate detector and OCR weights | Published as release `weights-v1` with checksums; downloaded automatically. Detector AP50 0.96 on Saisirishan and Kaggle test, 0.51 on DataCluster (see [docs/WEIGHTS.md](docs/WEIGHTS.md)). |
+| End-to-end latency on video | Measured once on a Colab T4: the full cascade does **not** keep up with 30 fps (see below). |
+| End-to-end plate accuracy on video | **Not measured.** No ground-truth plate list for the clip, so no accuracy claim is made. |
 
 Measured on a Colab T4 (vehicle detector and tracker only, clip played at real
 time, two runs on one clip, not a benchmark; drops vary run to run):
@@ -37,6 +38,21 @@ time, two runs on one clip, not a benchmark; drops vary run to run):
 | 1280 | 23 / 63 ms | 96 of 1172 (8%) | 34 |
 | 640, second run | 16 / 37 ms | 5 of 1172 | 26 |
 | 1280, second run | 21 / 38 ms | 30 of 1172 | 34 |
+
+Full cascade (vehicle, tracker, plate detector, OCR) on the same clip and GPU, one run,
+real-time playback, detector size 640:
+
+| Stage | p50 / p95 |
+|---|---|
+| Vehicle detect + track | 35 / 131 ms |
+| Plate detector (per call) | 50 / 184 ms |
+| OCR (per call) | 46 / 204 ms |
+| Whole frame | 74 / 608 ms |
+
+It processed 5.8 fps of 29.7 fps input: 229 of 1172 frames, 943 dropped by the bounded
+queue. Latency stays bounded, but a T4 is too slow for every-frame plate reading at
+30 fps with the current code. 25 plate events were written; no ground truth exists
+for the clip, so their correctness is unchecked.
 
 The tracker finds far fewer vehicles than are visible in this dense scene
 (few two-wheelers; COCO has no auto-rickshaw class), so vehicle recall is the main
