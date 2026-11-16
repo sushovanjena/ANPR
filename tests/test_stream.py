@@ -234,3 +234,16 @@ def test_runner_warms_up_models_before_stream_opens():
     runner.cascade = Cas()
     runner.warmup()  # a failing stage must be logged, not raised
     assert calls == ["vehicle", "plate"]
+
+
+def test_restart_clock_excludes_setup_time_from_fps():
+    import time
+
+    from anpr.stream.metrics import Metrics
+
+    m = Metrics()
+    time.sleep(0.3)  # stands in for model warm-up
+    m.restart_clock()
+    m.frames_in = 10
+    time.sleep(0.1)
+    assert m.snapshot()["fps_in"] > 40  # would be about 25 without the restart

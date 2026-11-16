@@ -103,6 +103,7 @@ class StreamRunner:
         """
         q: LatestQueue = self.source.queue
         self.warmup()
+        self.metrics.restart_clock()
         self.source.start()
         last_report = time.perf_counter()
         last_idx = 0

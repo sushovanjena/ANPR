@@ -24,6 +24,10 @@ class Metrics:
         self.reconnects = 0
         self._t0 = time.perf_counter()
 
+    def restart_clock(self) -> None:
+        """Start the FPS clock now, so setup time such as warm-up is not counted."""
+        self._t0 = time.perf_counter()
+
     @contextmanager
     def timer(self, stage: str):
         """Time a block of work and record it under ``stage`` (milliseconds)."""
