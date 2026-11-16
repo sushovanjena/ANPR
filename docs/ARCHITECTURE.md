@@ -125,14 +125,14 @@ Indian plates but lost accuracy on RoadText scene text (71% to about 24%).
 
 **Measured on a Colab T4 (2 vCPU)**, with the Charminar and highway clips copied to
 720p and played as paced 30 fps streams (`notebooks/colab_gpu_test.ipynb`, section 13),
-about 20 s of streaming after warm-up per row:
+about 20 s of streaming after warm-up per row (a fresh runtime; an earlier run gave 11.1, 14.3, 13.7 and 9.9 frames/s, so expect a few frames/s of run-to-run variation):
 
 | Cameras | Total frames served/s | Per camera | Frames dropped | Vehicle batch p50 (ms) |
 |---|---|---|---|---|
-| 1 | 11.1 | 11.1 | 490 | 15 (one frame) |
-| 2 | 14.3 | 7.1 | 1160 | 21 |
-| 4 | 13.7 | 3.4 | 2779 | 33 |
-| 6 | 9.9 | 1.6 | 4529 | 65 |
+| 1 | 11.5 | 11.5 | 489 | 15 (one frame) |
+| 2 | 14.2 | 7.1 | 1205 | 20 |
+| 4 | 12.6 | 3.2 | 2699 | 36 |
+| 6 | 9.3 | 1.6 | 4410 | 80 |
 
 Findings:
 
@@ -148,10 +148,12 @@ Findings:
   camera on the two CPU cores, so the first six-camera run served only 416 frames
   in 2.5 minutes while the GPU idled. Reducing the files to 720p restored about 26 fps
   of ingest per camera. A deployment needs hardware decoding (NVDEC) or more cores.
-- **Read quality is unchanged by scale:** the three copies of the highway clip gave
-  the same plates (`MH41BK1265`, `MH434EV065`), as expected from identical input.
-  Charminar plates are mostly unreadable at 720p, which is a resolution limit, not
-  a scheduling one.
+- **Plates are not read in the 720p six-camera grid.** At about 1.6 processed frames/s
+  per camera and 720p, the grid run produced vehicle tracks but no plate text
+  (92 events, all without a plate). Plates were read in the single-stream runs at
+  full resolution (highway, Bangalore, Charminar). So at this load the service
+  tracks vehicles but does not read plates; reading them needs more GPU throughput
+  or fewer cameras per GPU.
 
 ## 5. Live test on Colab
 
