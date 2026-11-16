@@ -22,7 +22,7 @@ GPU test on Colab: [notebooks/colab_gpu_test.ipynb](notebooks/colab_gpu_test.ipy
 | Part | State |
 |---|---|
 | Vehicle detection, tracking, live-stream runner, events, metrics | Working. Tested on a Colab T4 with a 1080p, 30 fps traffic clip (see below). |
-| Orchestration, grammar, consensus, association, config, weights fetching | Unit-tested (92 tests, CPU only). |
+| Orchestration, grammar, consensus, association, config, weights fetching | Unit-tested (100 tests, CPU only). |
 | OCR training pipeline (crops, teacher labels, synthetic data, fine-tuning) | In the repo (`src/anpr/ocr/`); unit-tested where it runs on CPU. |
 | Plate detector training and composite-data scripts | Detection metrics are in the repo (`src/anpr/eval/detection.py`); the training and composite-data code is **still only in the development notebook** (Part 7, see [docs/TRAINING.md](docs/TRAINING.md)). |
 | Plate detector and OCR weights | Published as release `weights-v1` with checksums; downloaded automatically. Detector AP50 0.96 on Saisirishan and Kaggle test, 0.51 on DataCluster (see [docs/WEIGHTS.md](docs/WEIGHTS.md)). |
