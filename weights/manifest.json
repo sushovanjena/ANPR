@@ -5,7 +5,7 @@
     "plate_rfdetr_nano.pth": {
       "role": "plate detector (RF-DETR Nano)",
       "url": null,
-      "sha256": null
+      "sha256": "c9117102231b0ae627a6e8921f6c46da8cdd9a434a07f3220db3d851c57c5eb0"
     },
     "plate_yolo26n.pt": {
       "role": "plate detector (YOLO26-n, alternative)",
@@ -15,12 +15,12 @@
     "ocr_repsvtr_v2.pt": {
       "role": "plate OCR (RepSVTR, fine-tuned)",
       "url": null,
-      "sha256": null
+      "sha256": "58d207419bc60ed99d4be00a6403dd5456e5450c08885dd53bb213880191abea"
     },
     "plate_dict.txt": {
       "role": "OCR character dictionary (36 characters)",
       "url": null,
-      "sha256": null
+      "sha256": "d798cc4724b12e455112439aca5b51ee29da71a264663e5dbfda25ed24a391f4"
     }
   }
 }

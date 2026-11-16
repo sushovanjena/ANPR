@@ -52,3 +52,23 @@ a mismatch deletes it and raises an error.
   pasted onto real vehicle photos at realistic scale). In earlier held-out tests it
   beat YOLO26-n on the Saisirishan set (AP50 0.958 / 0.965 against 0.906 / 0.904,
   val / test) and was weak for both on tiny plates in 8MP photos.
+
+## Published release (`weights-v1`)
+
+Published: `plate_rfdetr_nano.pth`, `ocr_repsvtr_v2.pt`, `plate_dict.txt`. The YOLO26-n
+plate detector (`plate_yolo26n.pt`) was not retrained and is not published.
+
+The detector was retrained from the COCO-pretrained RF-DETR Nano on 4,743 images
+(Kaggle train plus composite small-plate images), validated on 678 Saisirishan
+images, stopped early at epoch 15 with the best epoch at 9. Held-out results at a
+0.25 confidence threshold:
+
+| Set | Plates | AP50 | AP50-95 | Precision | Recall |
+|---|---|---|---|---|---|
+| Saisirishan val | 678 | 0.960 | 0.689 | 0.927 | 0.932 |
+| Saisirishan test | 1,006 | 0.958 | 0.684 | 0.921 | 0.932 |
+| Kaggle test | 319 | 0.967 | 0.797 | 0.949 | 0.940 |
+| DataCluster | 52 | 0.514 | 0.391 | 0.743 | 0.500 |
+
+DataCluster is a small, harder set (mixed plate sizes, unseen in training); recall
+there is 0.15 for plates under 0.5% of the image area.
