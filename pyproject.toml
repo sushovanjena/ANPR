@@ -22,6 +22,8 @@ where = ["src"]
 [tool.ruff]
 line-length = 88
 src = ["src"]
+# The development log is kept exactly as it was run, so it is not linted.
+extend-exclude = ["notebooks/development_log.ipynb"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "D", "I"]

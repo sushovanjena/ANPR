@@ -68,9 +68,7 @@ def get_datacluster(root: Path) -> None:
     """Download the DataCluster plate sample from Hugging Face."""
     from huggingface_hub import snapshot_download
 
-    snapshot_download(
-        HF_REPO, repo_type="dataset", local_dir=str(root / "datacluster")
-    )
+    snapshot_download(HF_REPO, repo_type="dataset", local_dir=str(root / "datacluster"))
 
 
 def get_roadtext(root: Path) -> None:
