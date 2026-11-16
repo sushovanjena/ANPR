@@ -15,7 +15,7 @@ Design, references and limitations: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 Weights and how to publish them: [docs/WEIGHTS.md](docs/WEIGHTS.md). Training
 pipeline and what is still only in the notebook: [docs/TRAINING.md](docs/TRAINING.md).
 Datasets and how to download them: [docs/DATA.md](docs/DATA.md).
-GPU test on Colab: [notebooks/colab_gpu_test.ipynb](notebooks/colab_gpu_test.ipynb).
+GPU test on Colab: [notebooks/colab_gpu_test.ipynb](notebooks/colab_gpu_test.ipynb), including a live stream view (annotated frames and plate text updating as the clip plays like a camera, then a replay).
 
 ## Status
 
