@@ -14,6 +14,7 @@ frame -> vehicle detector -> tracker -> plate detector (per vehicle crop)
 Design, references and limitations: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 Weights and how to publish them: [docs/WEIGHTS.md](docs/WEIGHTS.md). Training
 pipeline and what is not in the repo yet: [docs/TRAINING.md](docs/TRAINING.md).
+Datasets and how to download them: [docs/DATA.md](docs/DATA.md).
 GPU test on Colab: [notebooks/colab_gpu_test.ipynb](notebooks/colab_gpu_test.ipynb).
 
 ## Status
@@ -120,8 +121,9 @@ src/anpr/
   config.py, factory.py, run.py, weights.py, fetch_weights.py
 configs/      default.yaml
 weights/      manifest.json           (weight files are downloaded here, not committed)
-docs/         ARCHITECTURE.md, WEIGHTS.md, TRAINING.md
-notebooks/    colab_gpu_test.ipynb
+docs/         ARCHITECTURE.md, WEIGHTS.md, TRAINING.md, DATA.md
+scripts/      download_data.py (public datasets)
+notebooks/    colab_gpu_test.ipynb, development_log.ipynb
 tests/        one test module per component
 ```
 
