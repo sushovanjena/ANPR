@@ -138,10 +138,24 @@ class Cascade:
         return bool(d and d.valid and d.score >= self.settle_support)
 
     def process(
-        self, frame: np.ndarray, frame_idx: int = 0, ts: float = 0.0
+        self,
+        frame: np.ndarray,
+        frame_idx: int = 0,
+        ts: float = 0.0,
+        det: Detections | None = None,
     ) -> list[FrameResult]:
-        """Process one frame and return a result per confirmed vehicle track."""
-        det = self.vehicle_fn(frame)
+        """Process one frame and return a result per confirmed vehicle track.
+
+        Args:
+            frame: BGR image.
+            frame_idx: Frame sequence number.
+            ts: Frame timestamp in seconds.
+            det: Vehicle detections already computed for this frame, for example
+                by a batched call across cameras. When None the cascade runs
+                its own vehicle detector.
+        """
+        if det is None:
+            det = self.vehicle_fn(frame)
         tracks = self.tracker.update(det.boxes, det.scores, det.classes)
         h, w = frame.shape[:2]
         results: list[FrameResult] = []

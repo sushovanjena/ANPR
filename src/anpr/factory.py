@@ -5,6 +5,7 @@ from __future__ import annotations
 import numpy as np
 
 from anpr.config import Config
+from anpr.deploy.multistream import Camera, MultiStreamRunner
 from anpr.pipeline.cascade import Cascade, QualityGate
 from anpr.pipeline.vehicle import VehicleDetector
 from anpr.stream.metrics import Metrics
@@ -18,13 +19,14 @@ def _no_plates(crop: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return np.zeros((0, 4)), np.zeros(0)
 
 
-def build_cascade(cfg: Config) -> Cascade:
-    """Create the cascade with real models according to ``cfg``.
+def build_models(cfg: Config) -> tuple:
+    """Create the three models once: ``(vehicle, plate_fn, ocr_fn)``.
 
     Weights listed in ``weights/manifest.json`` are downloaded on first use when
     ``auto_fetch_weights`` is true. With ``plate.enabled`` false the plate
     detector and OCR are not loaded, so the vehicle detector and tracker can be
-    tested before plate weights exist.
+    tested before plate weights exist. Several cascades (one per camera) can
+    share the returned models, so the GPU holds one copy.
     """
     vehicle = VehicleDetector(cfg.vehicle.weights, cfg.vehicle.imgsz, cfg.vehicle.conf)
     if cfg.plate.enabled:
@@ -46,6 +48,18 @@ def build_cascade(cfg: Config) -> Cascade:
         )
     else:
         plate_fn, ocr_fn = _no_plates, lambda crop: ("", 0.0)
+    return vehicle, plate_fn, ocr_fn
+
+
+def build_cascade(cfg: Config, models: tuple | None = None) -> Cascade:
+    """Create a cascade for ``cfg`` with its own tracker and read history.
+
+    Args:
+        cfg: Pipeline configuration.
+        models: Shared ``(vehicle, plate_fn, ocr_fn)`` from ``build_models``;
+            built here when omitted.
+    """
+    vehicle, plate_fn, ocr_fn = models or build_models(cfg)
     return Cascade(
         vehicle,
         plate_fn,
@@ -82,6 +96,49 @@ def build_runner(cfg: Config, on_frame=None) -> StreamRunner:
         MultiSink(sinks),
         cfg.camera_id,
         metrics,
+        cfg.max_gap,
+        cfg.report_every,
+        on_frame,
+    )
+
+
+def build_multistream(
+    cfg: Config,
+    sources: dict[str, str],
+    on_frame=None,
+    max_batch: int = 8,
+) -> MultiStreamRunner:
+    """Create a runner that serves several cameras with one set of models.
+
+    Args:
+        cfg: Pipeline configuration; ``cfg.source`` and ``cfg.camera_id`` are
+            ignored in favour of ``sources``.
+        sources: Camera id to RTSP URL, video file or webcam index.
+        on_frame: Optional ``(camera_id, image, results, frame_index)`` callback.
+        max_batch: Most frames per batched vehicle-detection call.
+    """
+    models = build_models(cfg)
+    cameras = []
+    for cam_id, src in sources.items():
+        metrics = Metrics()
+        queue = LatestQueue(cfg.queue_size, metrics)
+        source: str | int = int(src) if str(src).isdigit() else src
+        grabber = FrameGrabber(
+            source, queue, live=cfg.live, realtime=cfg.realtime, metrics=metrics
+        )
+        cameras.append(Camera(cam_id, grabber, build_cascade(cfg, models), metrics))
+    sinks = []
+    if cfg.sinks.jsonl:
+        sinks.append(JsonlSink(cfg.sinks.jsonl))
+    if cfg.sinks.sqlite:
+        sinks.append(SqliteSink(cfg.sinks.sqlite))
+    vehicle = models[0]
+    batch_fn = getattr(vehicle, "detect_batch", None)
+    return MultiStreamRunner(
+        cameras,
+        MultiSink(sinks),
+        batch_fn,
+        max_batch,
         cfg.max_gap,
         cfg.report_every,
         on_frame,

@@ -74,18 +74,32 @@ class VehicleDetector:
         self.conf = conf
         self._model = None
 
-    def __call__(self, frame: np.ndarray) -> Detections:
-        """Detect vehicles in one BGR frame."""
+    def _predict(self, frames):
         if self._model is None:
             from ultralytics import YOLO
 
             self._model = YOLO(self.weights)
-        res = self._model.predict(
-            frame, imgsz=self.imgsz, conf=self.conf, verbose=False
-        )[0]
+        return self._model.predict(
+            frames, imgsz=self.imgsz, conf=self.conf, verbose=False
+        )
+
+    def _filter(self, res) -> Detections:
         return filter_vehicles(
             res.boxes.xyxy.cpu().numpy(),
             res.boxes.conf.cpu().numpy(),
             res.boxes.cls.cpu().numpy(),
             min_score=self.conf,
         )
+
+    def __call__(self, frame: np.ndarray) -> Detections:
+        """Detect vehicles in one BGR frame."""
+        return self._filter(self._predict(frame)[0])
+
+    def detect_batch(self, frames: list[np.ndarray]) -> list[Detections]:
+        """Detect vehicles in several frames with one model call.
+
+        Batching keeps the GPU busy when many cameras are served by one model.
+        """
+        if not frames:
+            return []
+        return [self._filter(r) for r in self._predict(list(frames))]

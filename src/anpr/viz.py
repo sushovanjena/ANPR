@@ -233,3 +233,107 @@ class LiveViewer:
         if self._writer is not None:
             self._writer.release()
             self._writer = None
+
+
+class GridViewer:
+    """Per-frame callback for ``MultiStreamRunner``: a live tile grid of cameras.
+
+    Each camera keeps its latest annotated frame in a tile. The grid is shown at
+    most every ``min_interval`` seconds and recorded in real time (each grid is
+    held until the next one), so the video lasts as long as the run.
+
+    Args:
+        show: Called with ``(jpeg_bytes, status_text)``.
+        cascades: Camera id to its ``Cascade``, for the running plate text.
+        cols: Tiles per row.
+        tile_width: Width of one tile in pixels.
+        out_path: Optional output video (OpenCV ``mp4v``; see ``to_h264``).
+        fps: Frame rate of the recording.
+        min_interval: Minimum seconds between grids.
+    """
+
+    def __init__(
+        self,
+        show,
+        cascades: dict[str, Cascade],
+        cols: int = 2,
+        tile_width: int = 480,
+        out_path: str | Path | None = None,
+        fps: float = 10.0,
+        min_interval: float = 0.15,
+    ) -> None:
+        self.show = show
+        self.cascades = cascades
+        self.cols = cols
+        self.tile_width = tile_width
+        self.out_path = out_path
+        self.fps = fps
+        self.min_interval = min_interval
+        self.grids_shown = 0
+        self._tiles: dict[str, np.ndarray] = {}
+        self._writer = None
+        self._size: tuple[int, int] | None = None
+        self._last_shown = 0.0
+        self._last_grid: np.ndarray | None = None
+        self._debt = 0.0
+
+    def _tile(self, cam_id, image, results) -> np.ndarray:
+        text = running_consensus(self.cascades[cam_id])
+        h, w = image.shape[:2]
+        size = (self.tile_width, int(round(h * self.tile_width / w / 2)) * 2)
+        tile = cv2.resize(draw_frame(image, results, text), size)
+        label = f"{cam_id}  {len(results)} veh  {len(set(text.values()))} plates"
+        _label(tile, label, 4, 22, (40, 40, 40), 0.6)
+        return tile
+
+    def _grid(self) -> np.ndarray:
+        ids = sorted(self._tiles)
+        h = max(t.shape[0] for t in self._tiles.values())
+        w = self.tile_width
+        rows = []
+        for i in range(0, len(ids), self.cols):
+            row = []
+            for cid in ids[i : i + self.cols]:
+                t = self._tiles[cid]
+                pad = np.zeros((h, w, 3), np.uint8)
+                pad[: t.shape[0]] = t
+                row.append(pad)
+            while len(row) < self.cols:
+                row.append(np.zeros((h, w, 3), np.uint8))
+            rows.append(np.hstack(row))
+        return np.vstack(rows)
+
+    def __call__(self, cam_id: str, image: np.ndarray, results, index: int):
+        """Update ``cam_id``'s tile and, if due, show and record the grid."""
+        self._tiles[cam_id] = self._tile(cam_id, image, results)
+        now = time.perf_counter()
+        if now - self._last_shown < self.min_interval:
+            return
+        grid = self._grid()
+        if self.out_path is not None:
+            if self._writer is None:
+                self._size = (grid.shape[1], grid.shape[0])
+                fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+                self._writer = cv2.VideoWriter(
+                    str(self.out_path), fourcc, self.fps, self._size
+                )
+            if self._last_grid is not None and self._last_grid.shape == grid.shape:
+                self._debt += (now - self._last_shown) * self.fps
+                for _ in range(max(0, int(self._debt) - 1)):
+                    self._writer.write(self._last_grid)
+                self._debt -= int(self._debt)
+            self._writer.write(grid)
+        self._last_grid, self._last_shown = grid, now
+        ok, jpg = cv2.imencode(".jpg", grid, [cv2.IMWRITE_JPEG_QUALITY, 70])
+        if ok:
+            plates = sum(
+                len(set(running_consensus(c).values())) for c in self.cascades.values()
+            )
+            self.show(jpg.tobytes(), f"{len(self._tiles)} cameras  |  {plates} plates")
+            self.grids_shown += 1
+
+    def close(self) -> None:
+        """Finish the recording."""
+        if self._writer is not None:
+            self._writer.release()
+            self._writer = None

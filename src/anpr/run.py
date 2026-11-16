@@ -8,7 +8,7 @@ import logging
 import signal
 
 from anpr.config import load_config
-from anpr.factory import build_runner
+from anpr.factory import build_multistream, build_runner
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -21,6 +21,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     ap.add_argument("--no-plates", action="store_true", help="vehicles + tracking only")
     ap.add_argument("--max-frames", type=int, help="stop after N processed frames")
+    ap.add_argument(
+        "--cameras",
+        nargs="+",
+        metavar="ID=SOURCE",
+        help="serve several cameras from one GPU, for example cam1=a.mp4 cam2=rtsp://x",
+    )
+    ap.add_argument("--max-batch", type=int, default=8, help="frames per GPU batch")
     ap.add_argument("--camera-id")
     ap.add_argument("--jsonl", help="event output file")
     ap.add_argument("--sqlite", help="event database file")
@@ -36,7 +43,11 @@ def main(argv: list[str] | None = None) -> int:
     }
     cfg = load_config(args.config, overrides)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
-    runner = build_runner(cfg)
+    if args.cameras:
+        sources = dict(item.split("=", 1) for item in args.cameras)
+        runner = build_multistream(cfg, sources, max_batch=args.max_batch)
+    else:
+        runner = build_runner(cfg)
     signal.signal(signal.SIGINT, lambda *_: runner.stop())
     signal.signal(signal.SIGTERM, lambda *_: runner.stop())
     snapshot = runner.run(max_frames=args.max_frames)
