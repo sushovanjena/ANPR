@@ -15,7 +15,7 @@ voted into labels, and the small model learns to reproduce them.
 | 1. Crops | `crops.py` | Cuts plate crops from YOLO-labelled images (`yolo_to_xyxy`, `extract_crops`). |
 | 2. Teacher reads | `teacher.py` | Qwen3-VL in 4-bit transcribes each crop (`load_teacher`, `transcribe`). |
 | 3. Label cleaning | `consensus.py` | Normalises replies, strips country marks, repairs look-alike characters, checks the Indian plate format and takes a vote across teacher reads (`clean_label`, `vote`, `cer`). |
-| 4. Synthetic plates | `synth.py` | Renders Indian plates (private, commercial, rental, EV, Bharat series, one and two lines) with blur, noise, glare and occlusion (`generate_dataset`). |
+| 4. Synthetic plates | `synth.py` | Renders Indian plates (private, commercial, rental, EV, Bharat series, one and two lines) with occlusion, perspective, blur, resolution loss, noise and JPEG artefacts (`generate_dataset`). |
 | 5. Fine-tune | `finetune.py` | AdamW with cosine schedule, EMA weights and early stopping on validation CER (`train`). |
 
 Training needs a GPU, `torch`, `transformers`, `bitsandbytes` and a clone of OpenOCR;
