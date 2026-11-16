@@ -105,6 +105,54 @@ Indian plates but lost accuracy on RoadText scene text (71% to about 24%).
 - **Replay as live.** `realtime: true` paces a recording at its source FPS, so a file
   benchmarks like a camera.
 
+## 4b. Many cameras on one GPU
+
+`anpr.deploy.multistream.MultiStreamRunner` serves several cameras from one process.
+
+- **Isolation.** Each camera has its own grabber thread, drop-oldest queue, tracker
+  and read history (`Camera`), so a stalled or reconnecting stream cannot affect
+  another and track ids never mix. Events carry `camera_id`.
+- **One copy of the models.** `build_models` loads the vehicle detector, plate
+  detector and OCR once and every camera's cascade shares them.
+- **Fair scheduling and batching.** Each round takes the next queued frame of the
+  cameras that have waited longest (up to `--max-batch`) and runs vehicle detection
+  for all of them in one batched call (`VehicleDetector.detect_batch`). The rest of
+  the cascade then runs per camera, because the plate stage works on a different
+  number of vehicle crops in every frame.
+- **Load shedding.** When the GPU cannot keep up, each camera drops its own stale
+  frames. Per-camera `frames_in`, `frames_processed` and `frames_dropped` are
+  reported, together with `vehicle_batch_ms`, `batch_size` and `camera_ms`.
+
+**Measured on a Colab T4 (2 vCPU)**, with the Charminar and highway clips copied to
+720p and played as paced 30 fps streams (`notebooks/colab_gpu_test.ipynb`, section 13),
+about 20 s of streaming after warm-up per row:
+
+| Cameras | Total frames served/s | Per camera | Frames dropped | Vehicle batch p50 (ms) |
+|---|---|---|---|---|
+| 1 | 11.1 | 11.1 | 490 | 15 (one frame) |
+| 2 | 14.3 | 7.1 | 1160 | 21 |
+| 4 | 13.7 | 3.4 | 2779 | 33 |
+| 6 | 9.9 | 1.6 | 4529 | 65 |
+
+Findings:
+
+- **The service is correct but not high-throughput on this hardware.** The total
+  saturates near 14 frames/s and falls at six cameras, so six 30 fps cameras get
+  about 1.6 processed frames/s each. That is enough to track and read plates of
+  slow traffic, not to follow every frame.
+- **Batching helps only the vehicle stage** (about 8 ms per frame at batch 4 against
+  15 ms alone). The plate detector and OCR still run once per vehicle crop and
+  dominate, so the next throughput gain is batching crops across vehicles and
+  cameras, which needs a batch-size-N compiled RF-DETR predictor. Not done.
+- **Decoding is CPU-bound.** Six 1080p/1440p files decoded at about 10 fps per
+  camera on the two CPU cores, so the first six-camera run served only 416 frames
+  in 2.5 minutes while the GPU idled. Reducing the files to 720p restored about 26 fps
+  of ingest per camera. A deployment needs hardware decoding (NVDEC) or more cores.
+- **Read quality is unchanged by scale:** the three copies of the highway clip gave
+  the same plates (`MH41BK1265`, `MH434EV065`), as expected from identical input.
+  Charminar plates are mostly unreadable at 720p, which is a resolution limit, not
+  a scheduling one.
+
 ## 5. Live test on Colab
 
 Setup: Colab T4, vehicle detector (YOLO26-n, COCO) and tracker only, a 39 s 1080p
@@ -142,6 +190,8 @@ Findings:
 
 ## 6. Limitations (state these up front)
 
+- The multi-camera service was tested on one T4 with replayed files, not with real RTSP
+  cameras or several GPUs, and the Docker image is untested.
 - End-to-end accuracy on video is not measured, and the full cascade is below real
   time on a T4 (section 5). Stages are unit-tested with fakes; the OCR adapter was written against
   the OpenOCR API and now runs on the real checkpoint in the full-pipeline test (section 5),

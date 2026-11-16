@@ -84,6 +84,18 @@ python -m anpr.run --config configs/default.yaml --source rtsp://cam/stream --li
     --camera-id gate-1 --sqlite out/events.db
 ```
 
+Several cameras can share one GPU process and one set of models; each camera keeps
+its own queue, tracker and read history, and vehicle detection is batched across
+cameras (see `docs/ARCHITECTURE.md`, section 4b):
+
+```bash
+python -m anpr.run --config configs/default.yaml --jsonl out/events.jsonl \
+    --cameras gate-1=rtsp://10.0.0.5/s gate-2=rtsp://10.0.0.6/s --max-batch 8
+```
+
+A GPU image can be built with the `Dockerfile` (`docker run --gpus all anpr ...`; the
+image build has not been tested).
+
 Press Ctrl-C to stop; open tracks are flushed and the final metrics are printed as
 JSON (`frames_in`, `frames_processed`, `frames_dropped`, `reconnects`, per-stage
 p50/p95 latency).
@@ -135,9 +147,10 @@ src/anpr/
   ocr/        recognizer.py, grammar.py        runtime: RepSVTR adapter, plate grammar
               crops.py, teacher.py, consensus.py, synth.py, finetune.py   training
   stream/     source.py, runner.py, sinks.py, events.py, metrics.py
+  deploy/     multistream.py          many cameras on one GPU: fair load shedding, batching
   eval/       pipeline_eval.py        recall, precision, CER on plate events
   config.py, factory.py, run.py, weights.py, fetch_weights.py
-  viz.py      annotated-video renderer (boxes, track ids, plate text) for demos
+  viz.py      annotated video (boxes, track ids, plate text): batch, live and camera-grid
 configs/      default.yaml
 weights/      manifest.json           (weight files are downloaded here, not committed)
 docs/         ARCHITECTURE.md, WEIGHTS.md, TRAINING.md, DATA.md
